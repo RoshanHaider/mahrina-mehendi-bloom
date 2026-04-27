@@ -111,6 +111,7 @@ export type Database = {
           sort_order: number
           subtitle: string | null
           title: string
+          video_url: string | null
         }
         Insert: {
           active?: boolean
@@ -121,6 +122,7 @@ export type Database = {
           sort_order?: number
           subtitle?: string | null
           title: string
+          video_url?: string | null
         }
         Update: {
           active?: boolean
@@ -131,6 +133,7 @@ export type Database = {
           sort_order?: number
           subtitle?: string | null
           title?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -141,6 +144,9 @@ export type Database = {
           delivery_fee: number
           id: number
           support_email: string
+          visit_address: string | null
+          visit_label: string | null
+          visit_map_url: string | null
           whatsapp_number: string
         }
         Insert: {
@@ -149,6 +155,9 @@ export type Database = {
           delivery_fee?: number
           id?: number
           support_email?: string
+          visit_address?: string | null
+          visit_label?: string | null
+          visit_map_url?: string | null
           whatsapp_number?: string
         }
         Update: {
@@ -157,7 +166,37 @@ export type Database = {
           delivery_fee?: number
           id?: number
           support_email?: string
+          visit_address?: string | null
+          visit_label?: string | null
+          visit_map_url?: string | null
           whatsapp_number?: string
+        }
+        Relationships: []
+      }
+      social_links: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          platform: string
+          sort_order: number
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          platform: string
+          sort_order?: number
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          platform?: string
+          sort_order?: number
+          url?: string | null
         }
         Relationships: []
       }
