@@ -12,10 +12,14 @@ import design3 from "@/assets/mehendi-design-3.jpg";
 import design4 from "@/assets/mehendi-design-4.jpg";
 import design5 from "@/assets/mehendi-design-5.jpg";
 import design6 from "@/assets/mehendi-design-6.jpg";
+import design7 from "@/assets/mehendi-design-7.jpg";
+import design8 from "@/assets/mehendi-design-8.jpg";
+import design9 from "@/assets/mehendi-design-9.jpg";
+import design10 from "@/assets/mehendi-design-10.jpg";
 
 export const LOGO = logo;
 
-export const DESIGN_GALLERY = [design1, design2, design3, design4, design5, design6];
+export const DESIGN_GALLERY = [design1, design2, design3, design4, design5, design6, design7, design8, design9, design10];
 
 const MAP: Record<string, string> = {
   "/src/assets/mahrina-logo.png": logo,
