@@ -2,14 +2,29 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
-import { Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered, Loader2 } from "lucide-react";
+import { Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered, Loader2, Upload, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "products" | "promos" | "orders" | "settings";
 
+const ADMIN_PASSWORD = "realmaheen12345";
+const AUTH_KEY = "mahrina_admin_ok";
+
+async function uploadToMedia(file: File): Promise<string | null> {
+  const ext = file.name.split(".").pop() || "bin";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from("media").upload(path, file, { cacheControl: "3600", upsert: false });
+  if (error) { toast.error(error.message); return null; }
+  const { data } = supabase.storage.from("media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("products");
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === "1");
   useEffect(() => { document.title = "Mahrina · Admin"; }, []);
+
+  if (!authed) return <PasswordGate onOk={() => { sessionStorage.setItem(AUTH_KEY, "1"); setAuthed(true); }} />;
 
   return (
     <div className="min-h-screen bg-cream">
