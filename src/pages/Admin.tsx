@@ -2,14 +2,29 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
-import { Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered, Loader2 } from "lucide-react";
+import { Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered, Loader2, Upload, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "products" | "promos" | "orders" | "settings";
 
+const ADMIN_PASSWORD = "realmaheen12345";
+const AUTH_KEY = "mahrina_admin_ok";
+
+async function uploadToMedia(file: File): Promise<string | null> {
+  const ext = file.name.split(".").pop() || "bin";
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from("media").upload(path, file, { cacheControl: "3600", upsert: false });
+  if (error) { toast.error(error.message); return null; }
+  const { data } = supabase.storage.from("media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("products");
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === "1");
   useEffect(() => { document.title = "Mahrina · Admin"; }, []);
+
+  if (!authed) return <PasswordGate onOk={() => { sessionStorage.setItem(AUTH_KEY, "1"); setAuthed(true); }} />;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -56,6 +71,14 @@ function TabBtn({ icon: Icon, label, active, onClick }: any) {
 }
 
 function ImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const onFile = async (f: File | undefined) => {
+    if (!f) return;
+    setBusy(true);
+    const url = await uploadToMedia(f);
+    setBusy(false);
+    if (url) { onChange(url); toast.success("Image uploaded"); }
+  };
   return (
     <div>
       <label className="text-xs uppercase tracking-wider text-muted-foreground">Image</label>
@@ -67,8 +90,71 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
           </button>
         ))}
       </div>
-      <input className="mt-2 w-full px-3 py-2 rounded-lg border border-border bg-white text-sm"
-        placeholder="Or paste an image URL" value={value} onChange={(e) => onChange(e.target.value)} />
+      <div className="mt-2 flex gap-2 items-center">
+        <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-bark text-cream text-sm cursor-pointer hover:bg-terracotta">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          Upload image
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+        </label>
+        <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-white text-sm"
+          placeholder="Or paste an image URL" value={value} onChange={(e) => onChange(e.target.value)} />
+      </div>
+      {value && <img src={resolveImage(value)} alt="" className="mt-2 h-24 rounded-lg object-cover" />}
+    </div>
+  );
+}
+
+function VideoPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const onFile = async (f: File | undefined) => {
+    if (!f) return;
+    setBusy(true);
+    const url = await uploadToMedia(f);
+    setBusy(false);
+    if (url) { onChange(url); toast.success("Video uploaded"); }
+  };
+  return (
+    <div>
+      <label className="text-xs uppercase tracking-wider text-muted-foreground">Video (optional, plays instead of image)</label>
+      <div className="mt-2 flex gap-2 items-center">
+        <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-bark text-cream text-sm cursor-pointer hover:bg-terracotta">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          Upload video
+          <input type="file" accept="video/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+        </label>
+        <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-white text-sm"
+          placeholder="Or paste a video URL (mp4)" value={value} onChange={(e) => onChange(e.target.value)} />
+        {value && <button type="button" onClick={() => onChange("")} className="text-destructive p-2"><Trash2 className="h-4 w-4" /></button>}
+      </div>
+      {value && <video src={value} className="mt-2 h-32 rounded-lg" controls muted />}
+    </div>
+  );
+}
+
+function PasswordGate({ onOk }: { onOk: () => void }) {
+  const [pw, setPw] = useState("");
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw === ADMIN_PASSWORD) onOk();
+    else toast.error("Wrong password");
+  };
+  return (
+    <div className="min-h-screen bg-cream flex items-center justify-center p-6">
+      <form onSubmit={submit} className="bg-white rounded-2xl border border-border p-8 shadow-soft w-full max-w-sm space-y-5">
+        <div className="flex items-center gap-3">
+          <img src={LOGO} alt="" className="h-10 w-10 rounded-full" />
+          <div>
+            <div className="font-display text-xl">Mahrina Admin</div>
+            <div className="text-xs text-muted-foreground">Enter password to continue</div>
+          </div>
+        </div>
+        <div className="relative">
+          <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input autoFocus type="password" value={pw} onChange={(e) => setPw(e.target.value)}
+            className="input pl-9 w-full" placeholder="Password" />
+        </div>
+        <button type="submit" className="w-full bg-bark text-cream py-2.5 rounded-full hover:bg-terracotta">Unlock</button>
+      </form>
     </div>
   );
 }
@@ -149,7 +235,7 @@ function ProductsAdmin() {
 }
 
 /* ---------- PROMOS ---------- */
-type Promo = { id: string; title: string; subtitle: string | null; image_url: string | null; cta_text: string | null; active: boolean; sort_order: number };
+type Promo = { id: string; title: string; subtitle: string | null; image_url: string | null; video_url: string | null; cta_text: string | null; active: boolean; sort_order: number };
 
 function PromosAdmin() {
   const [items, setItems] = useState<Promo[]>([]);
@@ -162,6 +248,7 @@ function PromosAdmin() {
     if (!draft.title) return toast.error("Title required");
     const { error } = await supabase.from("promotions").insert({
       title: draft.title!, subtitle: draft.subtitle ?? null, image_url: draft.image_url ?? null,
+      video_url: draft.video_url ?? null,
       cta_text: draft.cta_text ?? null, active: draft.active ?? true, sort_order: draft.sort_order ?? 1,
     });
     if (error) return toast.error(error.message);
@@ -182,6 +269,7 @@ function PromosAdmin() {
           <Field label="Sort order"><input type="number" className="input" value={draft.sort_order ?? 1} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} /></Field>
           <Field label="Active"><label className="flex items-center gap-2"><input type="checkbox" checked={draft.active ?? true} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> Show on landing</label></Field>
           <div className="md:col-span-2"><ImagePicker value={draft.image_url ?? ""} onChange={(v) => setDraft({ ...draft, image_url: v })} /></div>
+          <div className="md:col-span-2"><VideoPicker value={draft.video_url ?? ""} onChange={(v) => setDraft({ ...draft, video_url: v })} /></div>
         </div>
         <button onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
           <Plus className="h-4 w-4" /> Add promotion
