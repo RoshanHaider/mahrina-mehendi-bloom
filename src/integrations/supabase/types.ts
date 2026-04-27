@@ -111,6 +111,7 @@ export type Database = {
           sort_order: number
           subtitle: string | null
           title: string
+          video_url: string | null
         }
         Insert: {
           active?: boolean
@@ -121,6 +122,7 @@ export type Database = {
           sort_order?: number
           subtitle?: string | null
           title: string
+          video_url?: string | null
         }
         Update: {
           active?: boolean
@@ -131,6 +133,7 @@ export type Database = {
           sort_order?: number
           subtitle?: string | null
           title?: string
+          video_url?: string | null
         }
         Relationships: []
       }
