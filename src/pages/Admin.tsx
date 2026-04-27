@@ -33,12 +33,14 @@ export default function Admin() {
           <TabBtn icon={Package} label="Products" active={tab === "products"} onClick={() => setTab("products")} />
           <TabBtn icon={Tag} label="Promotions" active={tab === "promos"} onClick={() => setTab("promos")} />
           <TabBtn icon={ListOrdered} label="Orders" active={tab === "orders"} onClick={() => setTab("orders")} />
+          <TabBtn icon={Share2} label="Social links" active={tab === "socials"} onClick={() => setTab("socials")} />
           <TabBtn icon={Cog} label="Settings" active={tab === "settings"} onClick={() => setTab("settings")} />
         </nav>
         <main>
           {tab === "products" && <ProductsAdmin />}
           {tab === "promos" && <PromosAdmin />}
           {tab === "orders" && <OrdersAdmin />}
+          {tab === "socials" && <SocialsAdmin />}
           {tab === "settings" && <SettingsAdmin />}
         </main>
       </div>
