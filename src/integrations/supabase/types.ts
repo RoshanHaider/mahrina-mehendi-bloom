@@ -14,7 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          city: string
+          created_at: string
+          customer_address: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_fee: number
+          discount: number
+          id: string
+          items: Json
+          notes: string | null
+          status: string
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          customer_address: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_fee?: number
+          discount?: number
+          id?: string
+          items: Json
+          notes?: string | null
+          status?: string
+          subtotal: number
+          total: number
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          customer_address?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivery_fee?: number
+          discount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          badge: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          in_stock: boolean
+          name: string
+          price: number
+        }
+        Insert: {
+          badge?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          in_stock?: boolean
+          name: string
+          price: number
+        }
+        Update: {
+          badge?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          in_stock?: boolean
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      promotions: {
+        Row: {
+          active: boolean
+          created_at: string
+          cta_text: string | null
+          id: string
+          image_url: string | null
+          sort_order: number
+          subtitle: string | null
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cta_text?: string | null
+          id?: string
+          image_url?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cta_text?: string | null
+          id?: string
+          image_url?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          bulk_discount_min_items: number
+          bulk_discount_percent: number
+          delivery_fee: number
+          id: number
+          support_email: string
+          whatsapp_number: string
+        }
+        Insert: {
+          bulk_discount_min_items?: number
+          bulk_discount_percent?: number
+          delivery_fee?: number
+          id?: number
+          support_email?: string
+          whatsapp_number?: string
+        }
+        Update: {
+          bulk_discount_min_items?: number
+          bulk_discount_percent?: number
+          delivery_fee?: number
+          id?: number
+          support_email?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
