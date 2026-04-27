@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
-import { ShoppingBag, Settings } from "lucide-react";
+import { ShoppingBag, Settings, Sun, Moon } from "lucide-react";
 import { LOGO } from "@/lib/assets";
 import { useCart, totalQty } from "@/lib/cart";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function Header() {
   const items = useCart((s) => s.items);
   const count = totalQty(items);
+  const { theme, toggle } = useTheme();
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-cream/80 border-b border-border">
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="container flex items-center justify-between h-20">
         <Link to="/" className="flex items-center gap-3">
           <img src={LOGO} alt="Mahrina logo" className="h-12 w-12 rounded-full shadow-soft" />
@@ -24,9 +26,17 @@ export default function Header() {
           <a href="#contact" className="hover:text-bark transition-colors">Contact</a>
         </nav>
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggle}
+            className="h-9 w-9 grid place-items-center rounded-full border border-border bg-secondary hover:bg-accent hover:text-accent-foreground transition-colors"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           <Link
             to="/admin"
-            className="p-2 rounded-full hover:bg-parchment transition-colors text-muted-foreground"
+            className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground"
             aria-label="Admin"
             title="Admin portal"
           >

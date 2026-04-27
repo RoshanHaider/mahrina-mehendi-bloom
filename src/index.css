@@ -67,23 +67,31 @@
   }
 
   .dark {
-    --background: 25 30% 8%;
-    --foreground: var(--cream);
-    --card: 25 30% 10%;
-    --card-foreground: var(--cream);
-    --popover: 25 30% 10%;
-    --popover-foreground: var(--cream);
+    /* Re-map brand surfaces for dark mode so bg-cream / bg-parchment / text-ink swap automatically */
+    --cream: 25 30% 8%;          /* deepest base */
+    --parchment: 25 24% 13%;     /* card/section surface */
+    --sand: 25 20% 20%;          /* muted surface */
+    --ink: 38 60% 96%;           /* text becomes near-cream */
+
+    --background: var(--cream);
+    --foreground: var(--ink);
+    --card: var(--parchment);
+    --card-foreground: var(--ink);
+    --popover: var(--parchment);
+    --popover-foreground: var(--ink);
     --primary: var(--honey);
-    --primary-foreground: var(--ink);
-    --secondary: 25 20% 18%;
-    --secondary-foreground: var(--cream);
-    --muted: 25 20% 18%;
+    --primary-foreground: 25 30% 8%;
+    --secondary: var(--parchment);
+    --secondary-foreground: var(--ink);
+    --muted: var(--sand);
     --muted-foreground: 36 20% 70%;
     --accent: var(--gold);
-    --accent-foreground: var(--ink);
+    --accent-foreground: 25 30% 8%;
     --border: 25 20% 22%;
     --input: 25 20% 22%;
     --ring: var(--honey);
+
+    --shadow-soft: 0 20px 50px -20px hsl(0 0% 0% / 0.6);
   }
 }
 
