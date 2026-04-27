@@ -74,8 +74,10 @@ export type Database = {
           id: string
           image_url: string | null
           in_stock: boolean
+          low_stock_threshold: number
           name: string
           price: number
+          stock_quantity: number
         }
         Insert: {
           badge?: string | null
@@ -85,8 +87,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           in_stock?: boolean
+          low_stock_threshold?: number
           name: string
           price: number
+          stock_quantity?: number
         }
         Update: {
           badge?: string | null
@@ -96,8 +100,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           in_stock?: boolean
+          low_stock_threshold?: number
           name?: string
           price?: number
+          stock_quantity?: number
         }
         Relationships: []
       }
@@ -108,6 +114,8 @@ export type Database = {
           cta_text: string | null
           id: string
           image_url: string | null
+          kind: string
+          media_type: string
           sort_order: number
           subtitle: string | null
           title: string
@@ -119,6 +127,8 @@ export type Database = {
           cta_text?: string | null
           id?: string
           image_url?: string | null
+          kind?: string
+          media_type?: string
           sort_order?: number
           subtitle?: string | null
           title: string
@@ -130,6 +140,8 @@ export type Database = {
           cta_text?: string | null
           id?: string
           image_url?: string | null
+          kind?: string
+          media_type?: string
           sort_order?: number
           subtitle?: string | null
           title?: string
