@@ -265,6 +265,9 @@ function SettingsAdmin() {
       whatsapp_number: s.whatsapp_number, support_email: s.support_email,
       delivery_fee: Number(s.delivery_fee), bulk_discount_percent: Number(s.bulk_discount_percent),
       bulk_discount_min_items: Number(s.bulk_discount_min_items),
+      visit_address: s.visit_address || null,
+      visit_map_url: s.visit_map_url || null,
+      visit_label: s.visit_label || null,
     }).eq("id", 1);
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -272,16 +275,92 @@ function SettingsAdmin() {
   };
 
   return (
-    <Card title="Store settings">
-      <div className="grid md:grid-cols-2 gap-4">
-        <Field label="WhatsApp number (with country code, no +)"><input className="input" value={s.whatsapp_number} onChange={(e) => setS({ ...s, whatsapp_number: e.target.value })} /></Field>
-        <Field label="Support email"><input className="input" value={s.support_email} onChange={(e) => setS({ ...s, support_email: e.target.value })} /></Field>
-        <Field label="Delivery fee (Rs)"><input type="number" className="input" value={s.delivery_fee} onChange={(e) => setS({ ...s, delivery_fee: e.target.value })} /></Field>
-        <Field label="Bulk discount (%)"><input type="number" step="0.5" className="input" value={s.bulk_discount_percent} onChange={(e) => setS({ ...s, bulk_discount_percent: e.target.value })} /></Field>
-        <Field label="Min items for discount"><input type="number" className="input" value={s.bulk_discount_min_items} onChange={(e) => setS({ ...s, bulk_discount_min_items: e.target.value })} /></Field>
+    <div className="space-y-8">
+      <Card title="Store settings">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Field label="WhatsApp number (with country code, no +)"><input className="input" value={s.whatsapp_number} onChange={(e) => setS({ ...s, whatsapp_number: e.target.value })} /></Field>
+          <Field label="Support email"><input className="input" value={s.support_email} onChange={(e) => setS({ ...s, support_email: e.target.value })} /></Field>
+          <Field label="Delivery fee (Rs)"><input type="number" className="input" value={s.delivery_fee} onChange={(e) => setS({ ...s, delivery_fee: e.target.value })} /></Field>
+          <Field label="Bulk discount (%)"><input type="number" step="0.5" className="input" value={s.bulk_discount_percent} onChange={(e) => setS({ ...s, bulk_discount_percent: e.target.value })} /></Field>
+          <Field label="Min items for discount"><input type="number" className="input" value={s.bulk_discount_min_items} onChange={(e) => setS({ ...s, bulk_discount_min_items: e.target.value })} /></Field>
+        </div>
+        <button disabled={busy} onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save settings
+        </button>
+      </Card>
+
+      <Card title="Visit us (optional)">
+        <p className="text-sm text-muted-foreground mb-4">
+          Fill these only if customers can visit you in person. Leave blank to hide the visit section from the website.
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Field label="Visit label (e.g. 'Visit our studio')">
+            <input className="input" value={s.visit_label ?? ""} onChange={(e) => setS({ ...s, visit_label: e.target.value })} placeholder="Visit our studio" />
+          </Field>
+          <Field label="Map / location link (Google Maps URL)">
+            <input className="input" value={s.visit_map_url ?? ""} onChange={(e) => setS({ ...s, visit_map_url: e.target.value })} placeholder="https://maps.google.com/..." />
+          </Field>
+          <Field label="Full address" full>
+            <textarea className="input min-h-20" value={s.visit_address ?? ""} onChange={(e) => setS({ ...s, visit_address: e.target.value })} placeholder="Street, area, city" />
+          </Field>
+        </div>
+        <button disabled={busy} onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save visit info
+        </button>
+      </Card>
+    </div>
+  );
+}
+
+/* ---------- SOCIALS ---------- */
+type SocialLink = { id: string; platform: string; label: string; url: string | null; sort_order: number };
+
+function SocialsAdmin() {
+  const [items, setItems] = useState<SocialLink[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const load = () =>
+    supabase.from("social_links").select("*").order("sort_order").then(({ data }) => data && setItems(data as SocialLink[]));
+  useEffect(() => { load(); }, []);
+
+  const saveAll = async () => {
+    setBusy(true);
+    for (const it of items) {
+      await supabase.from("social_links").update({
+        label: it.label, url: it.url || null, sort_order: it.sort_order,
+      }).eq("id", it.id);
+    }
+    setBusy(false);
+    toast.success("Social links saved");
+    load();
+  };
+
+  const update = (id: string, patch: Partial<SocialLink>) =>
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+
+  return (
+    <Card title="Social media links">
+      <p className="text-sm text-muted-foreground mb-5">
+        Paste your page links. Empty links are hidden from the website footer.
+      </p>
+      <div className="space-y-3">
+        {items.map((it) => (
+          <div key={it.id} className="grid md:grid-cols-[160px_1fr] gap-3 p-3 bg-parchment rounded-xl">
+            <input
+              className="input" value={it.label}
+              onChange={(e) => update(it.id, { label: e.target.value })}
+              placeholder="Label"
+            />
+            <input
+              className="input" value={it.url ?? ""}
+              onChange={(e) => update(it.id, { url: e.target.value })}
+              placeholder={`Paste your ${it.platform} link`}
+            />
+          </div>
+        ))}
       </div>
-      <button disabled={busy} onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save settings
+      <button disabled={busy} onClick={saveAll} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save all links
       </button>
     </Card>
   );
