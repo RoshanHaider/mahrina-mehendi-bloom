@@ -9,7 +9,6 @@ export type Promo = {
   title: string;
   subtitle: string | null;
   image_url: string | null;
-  video_url?: string | null;
   cta_text: string | null;
 };
 
@@ -33,19 +32,7 @@ export default function PromoSlider({ promos }: { promos: Promo[] }) {
           {promos.map((p) => (
             <div key={p.id} className="relative flex-[0_0_100%] min-w-0">
               <div className="relative h-[88vh] min-h-[600px] glossy overflow-hidden">
-                {p.video_url ? (
-                  <video
-                    src={p.video_url}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    poster={p.image_url ? resolveImage(p.image_url) : undefined}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <img src={resolveImage(p.image_url)} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
-                )}
+                <img src={resolveImage(p.image_url)} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/30 to-transparent" />
                 <div className="container relative h-full flex items-center">
                   <motion.div
