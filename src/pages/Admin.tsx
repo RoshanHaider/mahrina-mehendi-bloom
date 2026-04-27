@@ -235,7 +235,7 @@ function ProductsAdmin() {
 }
 
 /* ---------- PROMOS ---------- */
-type Promo = { id: string; title: string; subtitle: string | null; image_url: string | null; cta_text: string | null; active: boolean; sort_order: number };
+type Promo = { id: string; title: string; subtitle: string | null; image_url: string | null; video_url: string | null; cta_text: string | null; active: boolean; sort_order: number };
 
 function PromosAdmin() {
   const [items, setItems] = useState<Promo[]>([]);
@@ -248,6 +248,7 @@ function PromosAdmin() {
     if (!draft.title) return toast.error("Title required");
     const { error } = await supabase.from("promotions").insert({
       title: draft.title!, subtitle: draft.subtitle ?? null, image_url: draft.image_url ?? null,
+      video_url: draft.video_url ?? null,
       cta_text: draft.cta_text ?? null, active: draft.active ?? true, sort_order: draft.sort_order ?? 1,
     });
     if (error) return toast.error(error.message);
@@ -268,6 +269,7 @@ function PromosAdmin() {
           <Field label="Sort order"><input type="number" className="input" value={draft.sort_order ?? 1} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} /></Field>
           <Field label="Active"><label className="flex items-center gap-2"><input type="checkbox" checked={draft.active ?? true} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> Show on landing</label></Field>
           <div className="md:col-span-2"><ImagePicker value={draft.image_url ?? ""} onChange={(v) => setDraft({ ...draft, image_url: v })} /></div>
+          <div className="md:col-span-2"><VideoPicker value={draft.video_url ?? ""} onChange={(v) => setDraft({ ...draft, video_url: v })} /></div>
         </div>
         <button onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
           <Plus className="h-4 w-4" /> Add promotion
