@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
-  Loader2, Share2, LayoutDashboard, Boxes, Lock,
+  Loader2, Share2, LayoutDashboard, Boxes, Lock, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials";
+type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials" | "subscribers";
 
 const ADMIN_PASSWORD = "realmaheen12345";
 const AUTH_KEY = "mahrina_admin_ok";
@@ -97,6 +97,7 @@ export default function Admin() {
           <TabBtn icon={Tag} label="Promotions" active={tab === "promos"} onClick={() => setTab("promos")} />
           <TabBtn icon={ListOrdered} label="Orders" active={tab === "orders"} onClick={() => setTab("orders")} />
           <TabBtn icon={Share2} label="Social links" active={tab === "socials"} onClick={() => setTab("socials")} />
+          <TabBtn icon={Mail} label="Subscribers" active={tab === "subscribers"} onClick={() => setTab("subscribers")} />
           <TabBtn icon={Cog} label="Settings" active={tab === "settings"} onClick={() => setTab("settings")} />
         </nav>
         <main>
@@ -106,6 +107,7 @@ export default function Admin() {
           {tab === "promos" && <PromosAdmin />}
           {tab === "orders" && <OrdersAdmin />}
           {tab === "socials" && <SocialsAdmin />}
+          {tab === "subscribers" && <SubscribersAdmin />}
           {tab === "settings" && <SettingsAdmin />}
         </main>
       </div>
@@ -693,5 +695,111 @@ function Field({ label, children, full = false }: { label: string; children: Rea
       <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+function SubscribersAdmin() {
+  const [rows, setRows] = useState<{ id: string; email: string; created_at: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("newsletter_subscribers")
+      .select("id,email,created_at")
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setRows(data ?? []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  const now = Date.now();
+  const day = rows.filter((r) => now - new Date(r.created_at).getTime() < 86400000).length;
+  const week = rows.filter((r) => now - new Date(r.created_at).getTime() < 7 * 86400000).length;
+  const month = rows.filter((r) => now - new Date(r.created_at).getTime() < 30 * 86400000).length;
+
+  async function remove(id: string) {
+    if (!confirm("Remove this subscriber?")) return;
+    const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Removed");
+    load();
+  }
+
+  function exportCsv() {
+    const csv = ["email,subscribed_at", ...rows.map((r) => `${r.email},${r.created_at}`)].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "subscribers.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h2 className="font-display text-3xl text-ink">Newsletter Subscribers</h2>
+          <p className="text-sm text-muted-foreground">People who signed up at the bottom of the website.</p>
+        </div>
+        <button
+          onClick={exportCsv}
+          disabled={!rows.length}
+          className="px-4 py-2 rounded-full bg-bark text-cream text-sm hover:bg-terracotta disabled:opacity-50"
+        >
+          Export CSV
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="Total subscribers" value={rows.length} />
+        <Stat label="Last 24 hours" value={day} />
+        <Stat label="This week" value={week} />
+        <Stat label="This month" value={month} />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        {loading ? (
+          <div className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-bark" /></div>
+        ) : rows.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">No subscribers yet.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-parchment text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Signed up</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id} className="border-t border-border">
+                  <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+                  <td className="px-4 py-3 text-ink">{r.email}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => remove(r.id)} className="text-terracotta hover:underline inline-flex items-center gap-1">
+                      <Trash2 className="h-3.5 w-3.5" /> Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="bg-white rounded-2xl border border-border p-5">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-display text-3xl text-ink mt-1">{value}</div>
+    </div>
   );
 }
