@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
-  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff,
+  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
