@@ -165,12 +165,15 @@ function startOf(range: RangeKey) {
 
 function Dashboard() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [subCount, setSubCount] = useState(0);
   const [revenueRange, setRevenueRange] = useState<RangeKey>("month");
   const [fulfilledRange, setFulfilledRange] = useState<RangeKey>("month");
 
   useEffect(() => {
     supabase.from("orders").select("*").order("created_at", { ascending: false })
       .then(({ data }) => data && setOrders(data));
+    supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true })
+      .then(({ count }) => setSubCount(count || 0));
   }, []);
 
   const counts = useMemo(() => {
