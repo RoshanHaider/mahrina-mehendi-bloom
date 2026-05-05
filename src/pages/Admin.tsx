@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
-  Loader2, Share2, LayoutDashboard, Boxes, Lock, Mail,
+  Loader2, Share2, LayoutDashboard, Boxes, Lock, Mail, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials" | "subscribers";
+type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "appointments" | "settings" | "socials" | "subscribers";
 
 const ADMIN_PASSWORD = "realmaheen12345";
 const AUTH_KEY = "mahrina_admin_ok";
@@ -96,6 +96,7 @@ export default function Admin() {
           <TabBtn icon={Boxes} label="Inventory" active={tab === "inventory"} onClick={() => setTab("inventory")} />
           <TabBtn icon={Tag} label="Promotions" active={tab === "promos"} onClick={() => setTab("promos")} />
           <TabBtn icon={ListOrdered} label="Orders" active={tab === "orders"} onClick={() => setTab("orders")} />
+          <TabBtn icon={CalendarDays} label="Appointments" active={tab === "appointments"} onClick={() => setTab("appointments")} />
           <TabBtn icon={Share2} label="Social links" active={tab === "socials"} onClick={() => setTab("socials")} />
           <TabBtn icon={Mail} label="Subscribers" active={tab === "subscribers"} onClick={() => setTab("subscribers")} />
           <TabBtn icon={Cog} label="Settings" active={tab === "settings"} onClick={() => setTab("settings")} />
@@ -106,6 +107,7 @@ export default function Admin() {
           {tab === "inventory" && <InventoryAdmin />}
           {tab === "promos" && <PromosAdmin />}
           {tab === "orders" && <OrdersAdmin />}
+          {tab === "appointments" && <AppointmentsAdmin />}
           {tab === "socials" && <SocialsAdmin />}
           {tab === "subscribers" && <SubscribersAdmin />}
           {tab === "settings" && <SettingsAdmin />}
@@ -803,3 +805,128 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     </div>
   );
 }
+
+/* ---------- APPOINTMENTS ---------- */
+type Appointment = {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  service_type: string;
+  preferred_date: string;
+  time_slot: string;
+  location: string;
+  notes: string | null;
+  status: string;
+  created_at: string;
+};
+
+function AppointmentsAdmin() {
+  const [rows, setRows] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .order("preferred_date", { ascending: true });
+    if (error) toast.error(error.message);
+    setRows((data ?? []) as Appointment[]);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function setStatus(id: string, status: string) {
+    const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Updated");
+    load();
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this appointment?")) return;
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    load();
+  }
+
+  const filtered = filter === "all" ? rows : rows.filter((r) => r.status === filter);
+  const counts = {
+    pending: rows.filter((r) => r.status === "pending").length,
+    confirmed: rows.filter((r) => r.status === "confirmed").length,
+    completed: rows.filter((r) => r.status === "completed").length,
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-display text-3xl text-ink">Artist Appointments</h2>
+        <p className="text-sm text-muted-foreground">Booking requests submitted from the landing page.</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="Total" value={rows.length} />
+        <Stat label="Pending" value={counts.pending} />
+        <Stat label="Confirmed" value={counts.confirmed} />
+        <Stat label="Completed" value={counts.completed} />
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {["all", "pending", "confirmed", "completed", "cancelled"].map((s) => (
+          <button key={s} onClick={() => setFilter(s)}
+            className={`px-3 py-1.5 rounded-full text-xs capitalize ${filter === s ? "bg-bark text-cream" : "bg-parchment text-ink hover:bg-sand"}`}>
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        {loading ? (
+          <div className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-bark" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">No appointments.</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filtered.map((r) => (
+              <div key={r.id} className="p-5 grid md:grid-cols-[1fr_auto] gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-medium text-ink">{r.customer_name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-parchment text-bark">{r.service_type}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                      r.status === "confirmed" ? "bg-green-100 text-green-800" :
+                      r.status === "completed" ? "bg-blue-100 text-blue-800" :
+                      r.status === "cancelled" ? "bg-red-100 text-red-800" :
+                      "bg-yellow-100 text-yellow-800"
+                    }`}>{r.status}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    📅 {r.preferred_date} · {r.time_slot}
+                  </div>
+                  <div className="text-sm text-muted-foreground">📞 {r.customer_phone}{r.customer_email ? ` · ✉ ${r.customer_email}` : ""}</div>
+                  <div className="text-sm text-muted-foreground">📍 {r.location}</div>
+                  {r.notes && <div className="text-sm text-ink/80 italic">"{r.notes}"</div>}
+                </div>
+                <div className="flex md:flex-col gap-2 items-start">
+                  <select value={r.status} onChange={(e) => setStatus(r.id, e.target.value)}
+                    className="px-3 py-1.5 rounded-lg border border-border text-xs bg-cream">
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <button onClick={() => remove(r.id)} className="text-terracotta hover:underline text-xs inline-flex items-center gap-1">
+                    <Trash2 className="h-3 w-3" /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
