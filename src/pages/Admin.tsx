@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
-  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff,
+  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials";
+type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials" | "subscribers";
 
 const ADMIN_PASSWORD = "realmaheen12345";
 const AUTH_KEY = "mahrina_admin_ok";
@@ -106,6 +106,7 @@ export default function Admin() {
           <TabBtn icon={Tag} label="Promotions" active={tab === "promos"} onClick={() => setTab("promos")} />
           <TabBtn icon={ListOrdered} label="Orders" active={tab === "orders"} onClick={() => setTab("orders")} />
           <TabBtn icon={Share2} label="Social links" active={tab === "socials"} onClick={() => setTab("socials")} />
+          <TabBtn icon={Mail} label="Subscribers" active={tab === "subscribers"} onClick={() => setTab("subscribers")} />
           <TabBtn icon={Cog} label="Settings" active={tab === "settings"} onClick={() => setTab("settings")} />
         </nav>
         <main>
@@ -115,6 +116,7 @@ export default function Admin() {
           {tab === "promos" && <PromosAdmin />}
           {tab === "orders" && <OrdersAdmin />}
           {tab === "socials" && <SocialsAdmin />}
+          {tab === "subscribers" && <SubscribersAdmin />}
           {tab === "settings" && <SettingsAdmin />}
         </main>
       </div>
@@ -163,12 +165,15 @@ function startOf(range: RangeKey) {
 
 function Dashboard() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [subCount, setSubCount] = useState(0);
   const [revenueRange, setRevenueRange] = useState<RangeKey>("month");
   const [fulfilledRange, setFulfilledRange] = useState<RangeKey>("month");
 
   useEffect(() => {
     supabase.from("orders").select("*").order("created_at", { ascending: false })
       .then(({ data }) => data && setOrders(data));
+    supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true })
+      .then(({ count }) => setSubCount(count || 0));
   }, []);
 
   const counts = useMemo(() => {
@@ -195,10 +200,11 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Pending orders" value={counts.pending} accent="bg-honey/30" />
         <StatCard label="In transit" value={counts.transit} accent="bg-terracotta/20" />
         <StatCard label="Fulfilled (all time)" value={counts.fulfilled} accent="bg-bark/15" />
+        <StatCard label="Email subscribers" value={subCount} accent="bg-parchment" />
       </div>
 
       <Card title="Net revenue">
@@ -702,5 +708,91 @@ function Field({ label, children, full = false }: { label: string; children: Rea
       <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+/* ---------- SUBSCRIBERS ---------- */
+function SubscribersAdmin() {
+  const [subs, setSubs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("newsletter_subscribers").select("*").order("created_at", { ascending: false })
+      .then(({ data }) => { setSubs(data || []); setLoading(false); });
+  };
+  useEffect(load, []);
+
+  const remove = async (id: string) => {
+    if (!confirm("Remove this subscriber?")) return;
+    const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("Removed"); load(); }
+  };
+
+  const exportCsv = () => {
+    const rows = [["Email", "Subscribed at"], ...subs.map((s) => [s.email, new Date(s.created_at).toISOString()])];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "mahrina-subscribers.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-3 gap-4">
+        <StatCard label="Total subscribers" value={subs.length} accent="bg-honey/30" />
+        <StatCard
+          label="Last 7 days"
+          value={subs.filter((s) => new Date(s.created_at) >= startOf("week")).length}
+          accent="bg-terracotta/20"
+        />
+        <StatCard
+          label="Last 24 hours"
+          value={subs.filter((s) => new Date(s.created_at) >= startOf("day")).length}
+          accent="bg-bark/15"
+        />
+      </div>
+
+      <section className="bg-white rounded-2xl border border-border shadow-soft p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-2xl text-ink">Email subscribers</h2>
+          <button onClick={exportCsv} disabled={!subs.length}
+            className="text-xs px-4 py-2 rounded-full bg-bark text-cream hover:bg-terracotta disabled:opacity-50">
+            Export CSV
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : subs.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-8 text-center">No subscribers yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
+                <tr><th className="py-2">Email</th><th className="py-2">Subscribed</th><th className="py-2 text-right">Action</th></tr>
+              </thead>
+              <tbody>
+                {subs.map((s) => (
+                  <tr key={s.id} className="border-b border-border/50">
+                    <td className="py-3">{s.email}</td>
+                    <td className="py-3 text-muted-foreground">{new Date(s.created_at).toLocaleString()}</td>
+                    <td className="py-3 text-right">
+                      <button onClick={() => remove(s.id)} className="text-terracotta hover:text-bark">
+                        <Trash2 className="h-4 w-4 inline" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
