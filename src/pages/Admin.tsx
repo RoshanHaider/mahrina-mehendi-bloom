@@ -106,6 +106,7 @@ export default function Admin() {
           <TabBtn icon={Tag} label="Promotions" active={tab === "promos"} onClick={() => setTab("promos")} />
           <TabBtn icon={ListOrdered} label="Orders" active={tab === "orders"} onClick={() => setTab("orders")} />
           <TabBtn icon={Share2} label="Social links" active={tab === "socials"} onClick={() => setTab("socials")} />
+          <TabBtn icon={Mail} label="Subscribers" active={tab === "subscribers"} onClick={() => setTab("subscribers")} />
           <TabBtn icon={Cog} label="Settings" active={tab === "settings"} onClick={() => setTab("settings")} />
         </nav>
         <main>
@@ -115,6 +116,7 @@ export default function Admin() {
           {tab === "promos" && <PromosAdmin />}
           {tab === "orders" && <OrdersAdmin />}
           {tab === "socials" && <SocialsAdmin />}
+          {tab === "subscribers" && <SubscribersAdmin />}
           {tab === "settings" && <SettingsAdmin />}
         </main>
       </div>
