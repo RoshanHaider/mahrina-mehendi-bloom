@@ -200,10 +200,11 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Pending orders" value={counts.pending} accent="bg-honey/30" />
         <StatCard label="In transit" value={counts.transit} accent="bg-terracotta/20" />
         <StatCard label="Fulfilled (all time)" value={counts.fulfilled} accent="bg-bark/15" />
+        <StatCard label="Email subscribers" value={subCount} accent="bg-parchment" />
       </div>
 
       <Card title="Net revenue">
