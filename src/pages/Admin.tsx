@@ -17,6 +17,7 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     document.title = "Mahrina · Admin";
