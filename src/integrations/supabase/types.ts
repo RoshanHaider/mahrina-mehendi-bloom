@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          id: string
+          location: string
+          notes: string | null
+          preferred_date: string
+          service_type: string
+          status: string
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          id?: string
+          location: string
+          notes?: string | null
+          preferred_date: string
+          service_type: string
+          status?: string
+          time_slot: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          location?: string
+          notes?: string | null
+          preferred_date?: string
+          service_type?: string
+          status?: string
+          time_slot?: string
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           created_at: string
