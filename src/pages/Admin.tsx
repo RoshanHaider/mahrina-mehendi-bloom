@@ -710,3 +710,89 @@ function Field({ label, children, full = false }: { label: string; children: Rea
     </label>
   );
 }
+
+/* ---------- SUBSCRIBERS ---------- */
+function SubscribersAdmin() {
+  const [subs, setSubs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("newsletter_subscribers").select("*").order("created_at", { ascending: false })
+      .then(({ data }) => { setSubs(data || []); setLoading(false); });
+  };
+  useEffect(load, []);
+
+  const remove = async (id: string) => {
+    if (!confirm("Remove this subscriber?")) return;
+    const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("Removed"); load(); }
+  };
+
+  const exportCsv = () => {
+    const rows = [["Email", "Subscribed at"], ...subs.map((s) => [s.email, new Date(s.created_at).toISOString()])];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "mahrina-subscribers.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-3 gap-4">
+        <StatCard label="Total subscribers" value={subs.length} accent="bg-honey/30" />
+        <StatCard
+          label="Last 7 days"
+          value={subs.filter((s) => new Date(s.created_at) >= startOf("week")).length}
+          accent="bg-terracotta/20"
+        />
+        <StatCard
+          label="Last 24 hours"
+          value={subs.filter((s) => new Date(s.created_at) >= startOf("day")).length}
+          accent="bg-bark/15"
+        />
+      </div>
+
+      <section className="bg-white rounded-2xl border border-border shadow-soft p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-2xl text-ink">Email subscribers</h2>
+          <button onClick={exportCsv} disabled={!subs.length}
+            className="text-xs px-4 py-2 rounded-full bg-bark text-cream hover:bg-terracotta disabled:opacity-50">
+            Export CSV
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : subs.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-8 text-center">No subscribers yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
+                <tr><th className="py-2">Email</th><th className="py-2">Subscribed</th><th className="py-2 text-right">Action</th></tr>
+              </thead>
+              <tbody>
+                {subs.map((s) => (
+                  <tr key={s.id} className="border-b border-border/50">
+                    <td className="py-3">{s.email}</td>
+                    <td className="py-3 text-muted-foreground">{new Date(s.created_at).toLocaleString()}</td>
+                    <td className="py-3 text-right">
+                      <button onClick={() => remove(s.id)} className="text-terracotta hover:text-bark">
+                        <Trash2 className="h-4 w-4 inline" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
