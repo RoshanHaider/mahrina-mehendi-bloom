@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
-  Loader2, Share2, LayoutDashboard, Boxes, Lock,
+  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     document.title = "Mahrina · Admin";
@@ -48,13 +49,21 @@ export default function Admin() {
           <div className="relative">
             <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
-              type="password"
+              type={showPw ? "text" : "password"}
               autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-border bg-cream text-sm outline-none focus:border-bark"
+              className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-border bg-cream text-sm outline-none focus:border-bark"
               placeholder="Password"
             />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              aria-label={showPw ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-ink"
+            >
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
           <button className="w-full bg-bark text-cream py-2.5 rounded-full hover:bg-terracotta text-sm">
             Sign in
