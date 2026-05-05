@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials";
+type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials" | "subscribers";
 
 const ADMIN_PASSWORD = "realmaheen12345";
 const AUTH_KEY = "mahrina_admin_ok";
