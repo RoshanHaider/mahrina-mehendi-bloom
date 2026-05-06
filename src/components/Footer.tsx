@@ -88,7 +88,7 @@ export default function Footer() {
                         rel="noreferrer"
                         aria-label={sl.label}
                         title={sl.label}
-                        className="h-10 w-10 grid place-items-center rounded-full bg-cream/10 hover:bg-honey hover:text-ink transition-colors"
+                        className="h-11 w-11 grid place-items-center rounded-xl bg-[hsl(28_35%_55%)] text-white shadow-sm hover:bg-[hsl(28_45%_45%)] transition-colors"
                       >
                         <Icon className="h-4 w-4" />
                       </a>
