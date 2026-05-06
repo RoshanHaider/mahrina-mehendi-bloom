@@ -23,6 +23,7 @@ export default function Header() {
           <a href="#ritual" className="hover:text-bark transition-colors">The Ritual</a>
           <a href="#designs" className="hover:text-bark transition-colors">Designs</a>
           <a href="#reviews" className="hover:text-bark transition-colors">Reviews</a>
+          <a href="#booking" className="hover:text-bark transition-colors">Booking</a>
           <a href="#contact" className="hover:text-bark transition-colors">Contact</a>
         </nav>
         <div className="flex items-center gap-2">
