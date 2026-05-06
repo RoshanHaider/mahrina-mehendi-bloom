@@ -1,0 +1,1 @@
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS estimated_revenue numeric NOT NULL DEFAULT 0;
