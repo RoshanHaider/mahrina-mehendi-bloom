@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
-  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff, Mail,
+  Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff, Mail, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "settings" | "socials" | "subscribers";
+type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "appointments" | "settings" | "socials" | "subscribers";
 
 const ADMIN_PASSWORD = "realmaheen12345";
 const AUTH_KEY = "mahrina_admin_ok";
