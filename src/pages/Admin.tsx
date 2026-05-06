@@ -798,3 +798,150 @@ function SubscribersAdmin() {
     </div>
   );
 }
+
+/* ---------- APPOINTMENTS ---------- */
+type AppointmentStatus = "all" | "pending" | "confirmed" | "completed" | "cancelled";
+
+function AppointmentsAdmin() {
+  const [items, setItems] = useState<any[]>([]);
+  const [filter, setFilter] = useState<AppointmentStatus>("all");
+  const [revenueRange, setRevenueRange] = useState<RangeKey>("month");
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("appointments").select("*").order("created_at", { ascending: false })
+      .then(({ data }) => { setItems(data || []); setLoading(false); });
+  };
+  useEffect(load, []);
+
+  const counts = useMemo(() => {
+    const c = { total: items.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    for (const a of items) {
+      if (a.status === "pending") c.pending++;
+      else if (a.status === "confirmed") c.confirmed++;
+      else if (a.status === "completed") c.completed++;
+      else if (a.status === "cancelled") c.cancelled++;
+    }
+    return c;
+  }, [items]);
+
+  const expectedRevenue = useMemo(() => {
+    const since = startOf(revenueRange);
+    return items
+      .filter((a) => a.status !== "cancelled" && new Date(a.created_at) >= since)
+      .reduce((s, a) => s + Number(a.estimated_revenue || 0), 0);
+  }, [items, revenueRange]);
+
+  const earnedRevenue = useMemo(() => {
+    const since = startOf(revenueRange);
+    return items
+      .filter((a) => a.status === "completed" && new Date(a.created_at) >= since)
+      .reduce((s, a) => s + Number(a.estimated_revenue || 0), 0);
+  }, [items, revenueRange]);
+
+  const setStatus = async (id: string, status: string) => {
+    await supabase.from("appointments").update({ status }).eq("id", id);
+    load();
+  };
+  const setRevenue = async (id: string, estimated_revenue: number) => {
+    await supabase.from("appointments").update({ estimated_revenue }).eq("id", id);
+    load();
+  };
+  const del = async (id: string) => {
+    if (!confirm("Delete this appointment?")) return;
+    await supabase.from("appointments").delete().eq("id", id);
+    load();
+  };
+
+  const filtered = filter === "all" ? items : items.filter((a) => a.status === filter);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-3xl text-ink">Artist Appointments</h1>
+        <p className="text-sm text-muted-foreground">Booking requests submitted from the landing page.</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Total" value={counts.total} accent="bg-bark/15" />
+        <StatCard label="Pending" value={counts.pending} accent="bg-honey/30" />
+        <StatCard label="Confirmed" value={counts.confirmed} accent="bg-terracotta/20" />
+        <StatCard label="Completed" value={counts.completed} accent="bg-bark/15" />
+      </div>
+
+      <Card title="Expected revenue from appointments">
+        <RangeTabs value={revenueRange} onChange={setRevenueRange} />
+        <div className="mt-4 grid sm:grid-cols-2 gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">{RANGE_LABEL[revenueRange]} · expected</div>
+            <div className="font-display text-4xl text-bark mt-1">Rs {expectedRevenue.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground mt-1">From pending, confirmed and completed bookings.</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">{RANGE_LABEL[revenueRange]} · earned</div>
+            <div className="font-display text-4xl text-bark mt-1">Rs {earnedRevenue.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground mt-1">Counted from completed appointments only.</div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="inline-flex bg-parchment rounded-full p-1 flex-wrap">
+        {([
+          { k: "all", l: "All" },
+          { k: "pending", l: "Pending" },
+          { k: "confirmed", l: "Confirmed" },
+          { k: "completed", l: "Completed" },
+          { k: "cancelled", l: "Cancelled" },
+        ] as { k: AppointmentStatus; l: string }[]).map((o) => (
+          <button key={o.k} onClick={() => setFilter(o.k)}
+            className={`px-4 py-1.5 rounded-full text-xs ${filter === o.k ? "bg-bark text-cream" : "text-ink/70"}`}>
+            {o.l}
+          </button>
+        ))}
+      </div>
+
+      <Card title={`Appointments (${filtered.length})`}>
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-8 text-center">No appointments.</div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((a) => (
+              <details key={a.id} className="bg-parchment rounded-xl p-4">
+                <summary className="cursor-pointer flex items-center justify-between gap-4 flex-wrap">
+                  <div>
+                    <div className="font-medium">{a.customer_name} <span className="text-muted-foreground text-sm">· {a.customer_phone}</span></div>
+                    <div className="text-xs text-muted-foreground">{a.service_type} · {a.preferred_date} · {a.time_slot}</div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs text-muted-foreground">Est. Rs</span>
+                    <input type="number" defaultValue={Number(a.estimated_revenue || 0)}
+                      onBlur={(e) => Number(e.target.value) !== Number(a.estimated_revenue) && setRevenue(a.id, Number(e.target.value))}
+                      className="w-24 bg-cream rounded-full px-3 py-1 text-xs border border-border" />
+                    <select value={a.status} onChange={(e) => setStatus(a.id, e.target.value)}
+                      className="bg-cream rounded-full px-3 py-1 text-xs border border-border">
+                      <option>pending</option><option>confirmed</option><option>completed</option><option>cancelled</option>
+                    </select>
+                    <button onClick={() => del(a.id)} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </summary>
+                <div className="mt-4 text-sm space-y-1">
+                  <div>Venue: {a.location}</div>
+                  {a.customer_email && <div>Email: {a.customer_email}</div>}
+                  {a.notes && <div>Notes: {a.notes}</div>}
+                  <div className="text-xs text-muted-foreground pt-1">Requested {new Date(a.created_at).toLocaleString()}</div>
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
