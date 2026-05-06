@@ -7,6 +7,7 @@ import HowItWorks from "@/components/HowItWorks";
 import DesignGallery from "@/components/DesignGallery";
 import Reviews from "@/components/Reviews";
 import Cart from "@/components/Cart";
+import Booking from "@/components/Booking";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
@@ -64,6 +65,7 @@ const Index = () => {
       <HowItWorks />
       <DesignGallery />
       <Reviews />
+      <Booking />
       <Cart />
       <Newsletter />
       <Footer />
