@@ -20,41 +20,57 @@ const AUTH_KEY = "mahrina_admin_ok";
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     document.title = "Mahrina · Admin";
     if (sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
   }, []);
 
+  const signIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const { data } = await supabase.from("site_settings").select("admin_username, admin_password_hash").eq("id", 1).maybeSingle();
+    const expectedUser = (data as any)?.admin_username || DEFAULT_USERNAME;
+    const expectedHash = (data as any)?.admin_password_hash || DEFAULT_PASSWORD_HASH;
+    const hash = await sha256Hex(pw);
+    setBusy(false);
+    if (user.trim().toLowerCase() === String(expectedUser).toLowerCase() && hash === expectedHash) {
+      sessionStorage.setItem(AUTH_KEY, "1");
+      setAuthed(true);
+    } else {
+      toast.error("Wrong username or password");
+    }
+  };
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (pw === ADMIN_PASSWORD) {
-              sessionStorage.setItem(AUTH_KEY, "1");
-              setAuthed(true);
-            } else {
-              toast.error("Wrong password");
-            }
-          }}
-          className="bg-white rounded-2xl border border-border shadow-soft p-8 w-full max-w-sm space-y-5"
-        >
+        <form onSubmit={signIn} className="bg-white rounded-2xl border border-border shadow-soft p-8 w-full max-w-sm space-y-5">
           <div className="flex items-center gap-3">
             <img src={LOGO} alt="" className="h-10 w-10 rounded-full" />
             <div>
               <div className="font-display text-xl text-ink">Mahrina Admin</div>
-              <div className="text-xs text-muted-foreground">Enter password to continue</div>
+              <div className="text-xs text-muted-foreground">Sign in to continue</div>
             </div>
+          </div>
+          <div className="relative">
+            <User className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              autoFocus
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-border bg-cream text-sm outline-none focus:border-bark"
+              placeholder="Username"
+            />
           </div>
           <div className="relative">
             <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type={showPw ? "text" : "password"}
-              autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-border bg-cream text-sm outline-none focus:border-bark"
@@ -69,10 +85,11 @@ export default function Admin() {
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <button className="w-full bg-bark text-cream py-2.5 rounded-full hover:bg-terracotta text-sm">
-            Sign in
+          <button disabled={busy} className="w-full bg-bark text-cream py-2.5 rounded-full hover:bg-terracotta text-sm">
+            {busy ? "Checking…" : "Sign in"}
           </button>
         </form>
+
       </div>
     );
   }
