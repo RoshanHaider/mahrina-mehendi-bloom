@@ -214,10 +214,13 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          admin_password_hash: string | null
+          admin_username: string
           bulk_discount_min_items: number
           bulk_discount_percent: number
           delivery_fee: number
           id: number
+          logo_url: string | null
           support_email: string
           visit_address: string | null
           visit_label: string | null
@@ -225,10 +228,13 @@ export type Database = {
           whatsapp_number: string
         }
         Insert: {
+          admin_password_hash?: string | null
+          admin_username?: string
           bulk_discount_min_items?: number
           bulk_discount_percent?: number
           delivery_fee?: number
           id?: number
+          logo_url?: string | null
           support_email?: string
           visit_address?: string | null
           visit_label?: string | null
@@ -236,10 +242,13 @@ export type Database = {
           whatsapp_number?: string
         }
         Update: {
+          admin_password_hash?: string | null
+          admin_username?: string
           bulk_discount_min_items?: number
           bulk_discount_percent?: number
           delivery_fee?: number
           id?: number
+          logo_url?: string | null
           support_email?: string
           visit_address?: string | null
           visit_label?: string | null
