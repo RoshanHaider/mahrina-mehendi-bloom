@@ -64,12 +64,21 @@ export default function Footer() {
         <div className="border-t border-cream/15 pt-12 grid md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={LOGO} alt="" className="h-10 w-10 rounded-full" />
+              <button
+                type="button"
+                onClick={() => setZoom(true)}
+                aria-label="View logo full size"
+                className="rounded-full focus:outline-none focus:ring-2 focus:ring-honey"
+              >
+                <img src={logo} alt="Mahrina logo" className="h-10 w-10 rounded-full hover:scale-105 transition-transform" />
+              </button>
               <div>
                 <div className="font-display text-2xl">Mahrina</div>
                 <div className="text-[10px] uppercase tracking-[0.25em] text-cream/60">Return to nature</div>
               </div>
             </div>
+            {zoom && <LogoZoom src={logo} onClose={() => setZoom(false)} />}
+
             <p className="text-sm text-cream/70 max-w-xs leading-relaxed">
               Skin-safe henna crafted with eucalyptus, clove and lemon. Made in Lahore, delivered with care.
             </p>
