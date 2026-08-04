@@ -486,10 +486,12 @@ type Promo = {
 };
 
 const PROMO_KINDS = [
+  { value: "hero", label: "Hero slider" },
   { value: "promo", label: "Promotion" },
   { value: "ad", label: "Ad campaign" },
   { value: "photoshoot", label: "Photoshoot" },
 ];
+
 
 function PromosAdmin() {
   const [items, setItems] = useState<Promo[]>([]);
