@@ -135,10 +135,26 @@ function TabBtn({ icon: Icon, label, active, onClick }: any) {
   );
 }
 
-function ImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ImagePicker({ value, onChange, label = "Image" }: { value: string; onChange: (v: string) => void; label?: string }) {
+  const [uploading, setUploading] = useState(false);
+
+  const pick = async (file?: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadMedia(file);
+      onChange(url);
+      toast.success("Photo uploaded");
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div>
-      <label className="text-xs uppercase tracking-wider text-muted-foreground">Image</label>
+      <label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</label>
       <div className="grid grid-cols-7 gap-2 mt-2">
         {PRESET_IMAGES.map((p) => (
           <button key={p} type="button" onClick={() => onChange(p)}
@@ -147,11 +163,22 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
           </button>
         ))}
       </div>
+      <div className="flex items-center gap-3 mt-3">
+        <label className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-parchment hover:bg-honey/40 text-sm cursor-pointer">
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? "Uploading…" : "Upload from device"}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+        </label>
+        {value?.startsWith("http") && (
+          <img src={value} alt="" className="h-10 w-10 rounded-lg object-cover border border-border" />
+        )}
+      </div>
       <input className="mt-2 w-full px-3 py-2 rounded-lg border border-border bg-white text-sm"
         placeholder="Or paste an image URL" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
+
 
 /* ---------- DASHBOARD ---------- */
 type RangeKey = "day" | "week" | "month";
