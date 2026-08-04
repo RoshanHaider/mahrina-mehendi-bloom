@@ -2,55 +2,75 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
+import { uploadMedia, sha256Hex } from "@/lib/upload";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
   Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff, Mail, CalendarDays,
+  Upload, User,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "appointments" | "settings" | "socials" | "subscribers";
 
-const ADMIN_PASSWORD = "realmaheen12345";
+const DEFAULT_USERNAME = "owner";
+const DEFAULT_PASSWORD_HASH = "aeae9ab2c3bdaa4583dfa5bc198eb6eaa3ea9cae236caa1e55d0a757f16ffc07";
 const AUTH_KEY = "mahrina_admin_ok";
+
 
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     document.title = "Mahrina · Admin";
     if (sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
   }, []);
 
+  const signIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const { data } = await supabase.from("site_settings").select("admin_username, admin_password_hash").eq("id", 1).maybeSingle();
+    const expectedUser = (data as any)?.admin_username || DEFAULT_USERNAME;
+    const expectedHash = (data as any)?.admin_password_hash || DEFAULT_PASSWORD_HASH;
+    const hash = await sha256Hex(pw);
+    setBusy(false);
+    if (user.trim().toLowerCase() === String(expectedUser).toLowerCase() && hash === expectedHash) {
+      sessionStorage.setItem(AUTH_KEY, "1");
+      setAuthed(true);
+    } else {
+      toast.error("Wrong username or password");
+    }
+  };
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (pw === ADMIN_PASSWORD) {
-              sessionStorage.setItem(AUTH_KEY, "1");
-              setAuthed(true);
-            } else {
-              toast.error("Wrong password");
-            }
-          }}
-          className="bg-white rounded-2xl border border-border shadow-soft p-8 w-full max-w-sm space-y-5"
-        >
+        <form onSubmit={signIn} className="bg-white rounded-2xl border border-border shadow-soft p-8 w-full max-w-sm space-y-5">
           <div className="flex items-center gap-3">
             <img src={LOGO} alt="" className="h-10 w-10 rounded-full" />
             <div>
               <div className="font-display text-xl text-ink">Mahrina Admin</div>
-              <div className="text-xs text-muted-foreground">Enter password to continue</div>
+              <div className="text-xs text-muted-foreground">Sign in to continue</div>
             </div>
+          </div>
+          <div className="relative">
+            <User className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              autoFocus
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-border bg-cream text-sm outline-none focus:border-bark"
+              placeholder="Username"
+            />
           </div>
           <div className="relative">
             <Lock className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type={showPw ? "text" : "password"}
-              autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-border bg-cream text-sm outline-none focus:border-bark"
@@ -65,10 +85,11 @@ export default function Admin() {
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <button className="w-full bg-bark text-cream py-2.5 rounded-full hover:bg-terracotta text-sm">
-            Sign in
+          <button disabled={busy} className="w-full bg-bark text-cream py-2.5 rounded-full hover:bg-terracotta text-sm">
+            {busy ? "Checking…" : "Sign in"}
           </button>
         </form>
+
       </div>
     );
   }
@@ -135,10 +156,26 @@ function TabBtn({ icon: Icon, label, active, onClick }: any) {
   );
 }
 
-function ImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ImagePicker({ value, onChange, label = "Image" }: { value: string; onChange: (v: string) => void; label?: string }) {
+  const [uploading, setUploading] = useState(false);
+
+  const pick = async (file?: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadMedia(file);
+      onChange(url);
+      toast.success("Photo uploaded");
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div>
-      <label className="text-xs uppercase tracking-wider text-muted-foreground">Image</label>
+      <label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</label>
       <div className="grid grid-cols-7 gap-2 mt-2">
         {PRESET_IMAGES.map((p) => (
           <button key={p} type="button" onClick={() => onChange(p)}
@@ -147,11 +184,22 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
           </button>
         ))}
       </div>
+      <div className="flex items-center gap-3 mt-3">
+        <label className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-parchment hover:bg-honey/40 text-sm cursor-pointer">
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? "Uploading…" : "Upload from device"}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+        </label>
+        {value?.startsWith("http") && (
+          <img src={value} alt="" className="h-10 w-10 rounded-lg object-cover border border-border" />
+        )}
+      </div>
       <input className="mt-2 w-full px-3 py-2 rounded-lg border border-border bg-white text-sm"
         placeholder="Or paste an image URL" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
+
 
 /* ---------- DASHBOARD ---------- */
 type RangeKey = "day" | "week" | "month";
@@ -438,10 +486,12 @@ type Promo = {
 };
 
 const PROMO_KINDS = [
+  { value: "hero", label: "Hero slider" },
   { value: "promo", label: "Promotion" },
   { value: "ad", label: "Ad campaign" },
   { value: "photoshoot", label: "Photoshoot" },
 ];
+
 
 function PromosAdmin() {
   const [items, setItems] = useState<Promo[]>([]);
@@ -637,9 +687,95 @@ function SettingsAdmin() {
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save visit info
         </button>
       </Card>
+
+      <Card title="Site logo">
+        <p className="text-sm text-muted-foreground mb-4">Replace the logo shown on the website header and admin portal. Upload from your device or paste a link.</p>
+        <div className="flex items-start gap-6 flex-wrap">
+          <img src={s.logo_url || LOGO} alt="Current logo" className="h-20 w-20 rounded-full object-cover border border-border" />
+          <div className="flex-1 min-w-64">
+            <ImagePicker label="Logo" value={s.logo_url ?? ""} onChange={(v) => setS({ ...s, logo_url: v })} />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5">
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              const { error } = await supabase.from("site_settings").update({ logo_url: s.logo_url || null } as any).eq("id", 1);
+              setBusy(false);
+              error ? toast.error(error.message) : toast.success("Logo updated");
+            }}
+            className="inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save logo
+          </button>
+          <button
+            onClick={async () => {
+              await supabase.from("site_settings").update({ logo_url: null } as any).eq("id", 1);
+              setS({ ...s, logo_url: null });
+              toast.success("Reverted to default logo");
+            }}
+            className="px-5 py-2.5 rounded-full bg-parchment hover:bg-honey/40 text-sm"
+          >
+            Use default logo
+          </button>
+        </div>
+      </Card>
+
+      <AdminCredentials current={s} onSaved={(u) => setS({ ...s, admin_username: u })} />
     </div>
   );
 }
+
+function AdminCredentials({ current, onSaved }: { current: any; onSaved: (u: string) => void }) {
+  const [username, setUsername] = useState(current.admin_username || "owner");
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    if (!username.trim()) return toast.error("Username is required");
+    const expectedHash = current.admin_password_hash || DEFAULT_PASSWORD_HASH;
+    if ((await sha256Hex(currentPw)) !== expectedHash) return toast.error("Current password is incorrect");
+    const patch: any = { admin_username: username.trim() };
+    if (newPw || confirmPw) {
+      if (newPw.length < 6) return toast.error("New password must be at least 6 characters");
+      if (newPw !== confirmPw) return toast.error("New passwords do not match");
+      patch.admin_password_hash = await sha256Hex(newPw);
+    }
+    setBusy(true);
+    const { error } = await supabase.from("site_settings").update(patch).eq("id", 1);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    current.admin_username = patch.admin_username;
+    if (patch.admin_password_hash) current.admin_password_hash = patch.admin_password_hash;
+    onSaved(patch.admin_username);
+    setCurrentPw(""); setNewPw(""); setConfirmPw("");
+    toast.success("Admin login updated");
+  };
+
+  return (
+    <Card title="Admin login">
+      <p className="text-sm text-muted-foreground mb-4">Change the username and password used to sign in to this portal.</p>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Field label="Username"><input className="input" value={username} onChange={(e) => setUsername(e.target.value)} /></Field>
+        <Field label="Current password"><input className="input" type={show ? "text" : "password"} value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} /></Field>
+        <Field label="New password (leave blank to keep)"><input className="input" type={show ? "text" : "password"} value={newPw} onChange={(e) => setNewPw(e.target.value)} /></Field>
+        <Field label="Confirm new password"><input className="input" type={show ? "text" : "password"} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} /></Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm mt-3">
+        <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} Show passwords
+      </label>
+      <button disabled={busy} onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Update login
+      </button>
+    </Card>
+  );
+}
+
 
 /* ---------- SOCIALS ---------- */
 type SocialLink = { id: string; platform: string; label: string; url: string | null; sort_order: number };
