@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, MessageCircle, Leaf, Sparkles, Recycle, FlaskConical, MapPin, Facebook, Instagram, Music2, Globe } from "lucide-react";
 import { LOGO } from "@/lib/assets";
+import LogoZoom from "@/components/LogoZoom";
+
 
 type Settings = {
   whatsapp_number: string;
@@ -33,14 +35,20 @@ function platformIcon(platform: string) {
 export default function Footer() {
   const [s, setS] = useState<Settings | null>(null);
   const [socials, setSocials] = useState<SocialLink[]>([]);
+  const [zoom, setZoom] = useState(false);
+  const [logo, setLogo] = useState<string>(LOGO);
+
 
   useEffect(() => {
     supabase.from("site_settings")
       .select("whatsapp_number, support_email, visit_address, visit_map_url, visit_label")
       .eq("id", 1).single()
       .then(({ data }) => data && setS(data as Settings));
+    supabase.from("site_settings").select("logo_url").eq("id", 1).maybeSingle()
+      .then(({ data }) => { const u = (data as any)?.logo_url; if (u) setLogo(u); });
     supabase.from("social_links").select("*").order("sort_order")
       .then(({ data }) => data && setSocials(data as SocialLink[]));
+
   }, []);
 
   const wa = s?.whatsapp_number ?? "923001234567";
@@ -64,12 +72,21 @@ export default function Footer() {
         <div className="border-t border-cream/15 pt-12 grid md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={LOGO} alt="" className="h-10 w-10 rounded-full" />
+              <button
+                type="button"
+                onClick={() => setZoom(true)}
+                aria-label="View logo full size"
+                className="rounded-full focus:outline-none focus:ring-2 focus:ring-honey"
+              >
+                <img src={logo} alt="Mahrina logo" className="h-10 w-10 rounded-full hover:scale-105 transition-transform" />
+              </button>
               <div>
                 <div className="font-display text-2xl">Mahrina</div>
                 <div className="text-[10px] uppercase tracking-[0.25em] text-cream/60">Return to nature</div>
               </div>
             </div>
+            {zoom && <LogoZoom src={logo} onClose={() => setZoom(false)} />}
+
             <p className="text-sm text-cream/70 max-w-xs leading-relaxed">
               Skin-safe henna crafted with eucalyptus, clove and lemon. Made in Lahore, delivered with care.
             </p>

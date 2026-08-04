@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ShoppingBag, Settings, Sun, Moon, X } from "lucide-react";
+import { ShoppingBag, Settings, Sun, Moon } from "lucide-react";
 import { LOGO } from "@/lib/assets";
 import { useCart, totalQty } from "@/lib/cart";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
+import LogoZoom from "@/components/LogoZoom";
 
 export default function Header() {
   const items = useCart((s) => s.items);
@@ -18,11 +19,6 @@ export default function Header() {
       .then(({ data }) => { const u = (data as any)?.logo_url; if (u) setLogo(u); });
   }, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setZoom(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
@@ -82,28 +78,8 @@ export default function Header() {
         </div>
       </div>
 
-      {zoom && (
-        <div
-          className="fixed inset-0 z-[60] bg-ink/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in"
-          onClick={() => setZoom(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            onClick={() => setZoom(false)}
-            aria-label="Close"
-            className="absolute top-6 right-6 h-10 w-10 grid place-items-center rounded-full bg-cream/15 text-cream hover:bg-cream/25"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <img
-            src={logo}
-            alt="Mahrina logo full size"
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-soft"
-          />
-        </div>
-      )}
+      {zoom && <LogoZoom src={logo} onClose={() => setZoom(false)} />}
+
     </header>
   );
 
