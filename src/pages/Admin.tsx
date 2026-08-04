@@ -2,16 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LOGO, PRESET_IMAGES, resolveImage } from "@/lib/assets";
+import { uploadMedia, sha256Hex } from "@/lib/upload";
 import {
   Plus, Save, Trash2, ArrowLeft, Package, Tag, Settings as Cog, ListOrdered,
   Loader2, Share2, LayoutDashboard, Boxes, Lock, Eye, EyeOff, Mail, CalendarDays,
+  Upload, User,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "dashboard" | "products" | "inventory" | "promos" | "orders" | "appointments" | "settings" | "socials" | "subscribers";
 
-const ADMIN_PASSWORD = "realmaheen12345";
+const DEFAULT_USERNAME = "owner";
+const DEFAULT_PASSWORD_HASH = "aeae9ab2c3bdaa4583dfa5bc198eb6eaa3ea9cae236caa1e55d0a757f16ffc07";
 const AUTH_KEY = "mahrina_admin_ok";
+
 
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("dashboard");
