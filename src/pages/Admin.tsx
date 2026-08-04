@@ -687,9 +687,95 @@ function SettingsAdmin() {
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save visit info
         </button>
       </Card>
+
+      <Card title="Site logo">
+        <p className="text-sm text-muted-foreground mb-4">Replace the logo shown on the website header and admin portal. Upload from your device or paste a link.</p>
+        <div className="flex items-start gap-6 flex-wrap">
+          <img src={s.logo_url || LOGO} alt="Current logo" className="h-20 w-20 rounded-full object-cover border border-border" />
+          <div className="flex-1 min-w-64">
+            <ImagePicker label="Logo" value={s.logo_url ?? ""} onChange={(v) => setS({ ...s, logo_url: v })} />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5">
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              const { error } = await supabase.from("site_settings").update({ logo_url: s.logo_url || null } as any).eq("id", 1);
+              setBusy(false);
+              error ? toast.error(error.message) : toast.success("Logo updated");
+            }}
+            className="inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save logo
+          </button>
+          <button
+            onClick={async () => {
+              await supabase.from("site_settings").update({ logo_url: null } as any).eq("id", 1);
+              setS({ ...s, logo_url: null });
+              toast.success("Reverted to default logo");
+            }}
+            className="px-5 py-2.5 rounded-full bg-parchment hover:bg-honey/40 text-sm"
+          >
+            Use default logo
+          </button>
+        </div>
+      </Card>
+
+      <AdminCredentials current={s} onSaved={(u) => setS({ ...s, admin_username: u })} />
     </div>
   );
 }
+
+function AdminCredentials({ current, onSaved }: { current: any; onSaved: (u: string) => void }) {
+  const [username, setUsername] = useState(current.admin_username || "owner");
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    if (!username.trim()) return toast.error("Username is required");
+    const expectedHash = current.admin_password_hash || DEFAULT_PASSWORD_HASH;
+    if ((await sha256Hex(currentPw)) !== expectedHash) return toast.error("Current password is incorrect");
+    const patch: any = { admin_username: username.trim() };
+    if (newPw || confirmPw) {
+      if (newPw.length < 6) return toast.error("New password must be at least 6 characters");
+      if (newPw !== confirmPw) return toast.error("New passwords do not match");
+      patch.admin_password_hash = await sha256Hex(newPw);
+    }
+    setBusy(true);
+    const { error } = await supabase.from("site_settings").update(patch).eq("id", 1);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    current.admin_username = patch.admin_username;
+    if (patch.admin_password_hash) current.admin_password_hash = patch.admin_password_hash;
+    onSaved(patch.admin_username);
+    setCurrentPw(""); setNewPw(""); setConfirmPw("");
+    toast.success("Admin login updated");
+  };
+
+  return (
+    <Card title="Admin login">
+      <p className="text-sm text-muted-foreground mb-4">Change the username and password used to sign in to this portal.</p>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Field label="Username"><input className="input" value={username} onChange={(e) => setUsername(e.target.value)} /></Field>
+        <Field label="Current password"><input className="input" type={show ? "text" : "password"} value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} /></Field>
+        <Field label="New password (leave blank to keep)"><input className="input" type={show ? "text" : "password"} value={newPw} onChange={(e) => setNewPw(e.target.value)} /></Field>
+        <Field label="Confirm new password"><input className="input" type={show ? "text" : "password"} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} /></Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm mt-3">
+        <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} Show passwords
+      </label>
+      <button disabled={busy} onClick={save} className="mt-5 inline-flex items-center gap-2 bg-bark text-cream px-5 py-2.5 rounded-full hover:bg-terracotta">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Update login
+      </button>
+    </Card>
+  );
+}
+
 
 /* ---------- SOCIALS ---------- */
 type SocialLink = { id: string; platform: string; label: string; url: string | null; sort_order: number };
