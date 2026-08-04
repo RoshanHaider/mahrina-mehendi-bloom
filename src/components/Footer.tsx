@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, MessageCircle, Leaf, Sparkles, Recycle, FlaskConical, MapPin, Facebook, Instagram, Music2, Globe } from "lucide-react";
 import { LOGO } from "@/lib/assets";
+import LogoZoom from "@/components/LogoZoom";
+
 
 type Settings = {
   whatsapp_number: string;
@@ -33,6 +35,9 @@ function platformIcon(platform: string) {
 export default function Footer() {
   const [s, setS] = useState<Settings | null>(null);
   const [socials, setSocials] = useState<SocialLink[]>([]);
+  const [zoom, setZoom] = useState(false);
+  const [logo, setLogo] = useState<string>(LOGO);
+
 
   useEffect(() => {
     supabase.from("site_settings")
