@@ -44,8 +44,11 @@ export default function Footer() {
       .select("whatsapp_number, support_email, visit_address, visit_map_url, visit_label")
       .eq("id", 1).single()
       .then(({ data }) => data && setS(data as Settings));
+    supabase.from("site_settings").select("logo_url").eq("id", 1).maybeSingle()
+      .then(({ data }) => { const u = (data as any)?.logo_url; if (u) setLogo(u); });
     supabase.from("social_links").select("*").order("sort_order")
       .then(({ data }) => data && setSocials(data as SocialLink[]));
+
   }, []);
 
   const wa = s?.whatsapp_number ?? "923001234567";
